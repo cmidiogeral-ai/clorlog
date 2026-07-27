@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ClorLog — Controle de Cloro Residual</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Mono:wght@500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #F4FAF8;
+    --ink: #0B2B2C;
+    --ink-soft: #4A6664;
+    --teal: #0E5C56;
+    --teal-deep: #073B38;
+    --aqua: #12A594;
+    --line: #D9E8E5;
+    --card: #FFFFFF;
+    --amber: #C9821B;
+    --amber-bg: #FCF1DF;
+    --red: #C13A34;
+    --red-bg: #FBE7E5;
+    --green-bg: #E4F5EF;
+    --green: #0E7A54;
+    --radius: 14px;
+    --shadow: 0 1px 2px rgba(11,43,44,0.06), 0 8px 24px -12px rgba(11,43,44,0.18);
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Inter', sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{ max-width: 980px; margin: 0 auto; padding: 20px 16px 60px; }
+
+  header.app{
+    background: linear-gradient(135deg, var(--teal-deep), var(--teal) 65%, var(--aqua));
+    border-radius: var(--radius);
+    color: #EAF7F4;
+    padding: 22px 24px;
+    box-shadow: var(--shadow);
+    position: relative;
+    overflow: hidden;
+  }
+  header.app::after{
+    content:"";
+    position:absolute; right:-40px; top:-40px; width:160px; height:160px;
+    border-radius:50%;
+    background: radial-gradient(circle, rgba(255,255,255,0.12), transparent 70%);
+  }
+  .brand{ display:flex; align-items:center; gap:10px; }
+  .brand-mark{
+    width:34px; height:34px; border-radius:9px;
+    background: rgba(255,255,255,0.14);
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Space Grotesk', sans-serif; font-weight:700; font-size:15px;
+    border:1px solid rgba(255,255,255,0.25);
+  }
+  .brand-name{ font-family:'Space Grotesk', sans-serif; font-weight:700; font-size:20px; letter-spacing:0.2px; }
+  .brand-tag{ font-size:11.5px; color:#C9E9E2; margin-top:1px; letter-spacing:0.3px; text-transform:uppercase; }
+  .meta-row{ display:flex; flex-wrap:wrap; gap:22px; margin-top:18px; }
+  .meta-item .k{ font-size:10.5px; text-transform:uppercase; letter-spacing:0.6px; color:#B9E3DB; }
+  .meta-item .v{ font-family:'Space Grotesk', sans-serif; font-weight:600; font-size:15px; margin-top:2px; }
+  .btn-config{
+    position:absolute; top:20px; right:20px;
+    background: rgba(255,255,255,0.14); border:1px solid rgba(255,255,255,0.28);
+    color:#EAF7F4; border-radius:9px; padding:7px 12px; font-size:12.5px; font-weight:600;
+    cursor:pointer; font-family:'Inter', sans-serif;
+  }
+  .btn-config:hover{ background: rgba(255,255,255,0.22); }
+
+  .section{ margin-top: 26px; }
+  .section-head{ display:flex; align-items:baseline; justify-content:space-between; gap:12px; margin-bottom:12px; flex-wrap:wrap; }
+  .section-title{ font-family:'Space Grotesk', sans-serif; font-weight:700; font-size:16px; color: var(--teal-deep); display:flex; align-items:center; gap:8px;}
+  .section-title .num{ font-family:'IBM Plex Mono', monospace; color: var(--aqua); font-size:13px; }
+  .section-sub{ font-size:12.5px; color:var(--ink-soft); }
+
+  .dash-grid{ display:grid; grid-template-columns: repeat(auto-fit, minmax(240px,1fr)); gap:14px; }
+  .dash-card{
+    background: var(--card); border:1px solid var(--line); border-radius: var(--radius);
+    padding: 16px; box-shadow: var(--shadow);
+  }
+  .dash-card .ponto{ font-weight:700; font-size:14px; color: var(--teal-deep); }
+  .dash-card .reading{
+    font-family:'IBM Plex Mono', monospace; font-size:28px; font-weight:600; margin-top:6px;
+  }
+  .dash-card .reading .unit{ font-size:13px; color: var(--ink-soft); font-weight:500; margin-left:4px;}
+  .dash-card .when{ font-size:11px; color: var(--ink-soft); margin-top:2px; }
+  .tube{ margin-top:12px; height:14px; border-radius:7px; position:relative; overflow:visible;
+    background: linear-gradient(to right,
+      var(--red) 0%, var(--red) 4%,
+      var(--green) 4%, var(--green) 40%,
+      var(--amber) 40%, var(--amber) 100%);
+  }
+  .tube .marker{
+    position:absolute; top:-4px; width:3px; height:22px; background: var(--ink);
+    border-radius:2px; transform: translateX(-50%);
+  }
+  .tube .marker::after{
+    content:""; position:absolute; top:-5px; left:50%; transform:translateX(-50%);
+    border-left:4px solid transparent; border-right:4px solid transparent; border-bottom:5px solid var(--ink);
+  }
+  .tube-scale{ display:flex; justify-content:space-between; font-size:9.5px; color:var(--ink-soft); margin-top:3px; font-family:'IBM Plex Mono', monospace;}
+  .pill{ display:inline-block; margin-top:10px; font-size:11.5px; font-weight:600; padding:3px 9px; border-radius:20px; }
+  .pill.ok{ background: var(--green-bg); color: var(--green); }
+  .pill.warning{ background: var(--amber-bg); color: var(--amber); }
+  .pill.danger{ background: var(--red-bg); color: var(--red); }
+  .dash-empty{ color:var(--ink-soft); font-size:13px; padding: 18px; background:var(--card); border:1px dashed var(--line); border-radius:var(--radius); }
+
+  .card{ background: var(--card); border:1px solid var(--line); border-radius: var(--radius); padding:18px; box-shadow: var(--shadow); }
+  .form-grid{ display:grid; grid-template-columns: repeat(auto-fit, minmax(150px,1fr)); gap:12px; }
+  .field label{ font-size:11.5px; font-weight:600; text-transform:uppercase; letter-spacing:0.3px; color: var(--ink-soft); display:block; margin-bottom:5px; }
+  .field input, .field select{
+    width:100%; padding:9px 10px; border-radius:8px; border:1px solid var(--line);
+    font-family:'Inter', sans-serif; font-size:14px; background:#FBFDFC; color:var(--ink);
+  }
+  .field input:focus, .field select:focus{ outline:2px solid var(--aqua); outline-offset:1px; border-color:var(--aqua); }
+  .field.full{ grid-column: 1 / -1; }
+  .status-preview{ margin-top:14px; padding:10px 12px; border-radius:9px; font-size:13px; display:flex; align-items:center; gap:8px; }
+  .status-preview.ok{ background:var(--green-bg); color:var(--green); }
+  .status-preview.warning{ background:var(--amber-bg); color:var(--amber); }
+  .status-preview.danger{ background:var(--red-bg); color:var(--red); }
+  .dot{ width:8px; height:8px; border-radius:50%; background:currentColor; flex-shrink:0; }
+  .actions-row{ margin-top:14px; display:flex; gap:10px; flex-wrap:wrap; }
+  button.primary{
+    background: var(--teal); color:#fff; border:none; border-radius:9px; padding:10px 18px;
+    font-weight:600; font-size:13.5px; cursor:pointer; font-family:'Inter', sans-serif;
+  }
+  button.primary:hover{ background: var(--teal-deep); }
+  button.secondary{
+    background:#fff; color:var(--teal); border:1px solid var(--line); border-radius:9px; padding:10px 16px;
+    font-weight:600; font-size:13.5px; cursor:pointer; font-family:'Inter', sans-serif;
+  }
+  button.secondary:hover{ background:#F1F8F6; }
+
+  .filters{ display:flex; gap:10px; flex-wrap:wrap; align-items:end; }
+  .filters .field{ min-width:150px; }
+  .table-wrap{ overflow-x:auto; margin-top:14px; border-radius: var(--radius); border:1px solid var(--line); }
+  table{ width:100%; border-collapse:collapse; background:var(--card); font-size:13px; min-width:760px; }
+  thead th{
+    text-align:left; padding:10px 12px; background:#EEF7F4; color:var(--teal-deep);
+    font-size:11px; text-transform:uppercase; letter-spacing:0.4px; font-weight:700;
+    border-bottom:1px solid var(--line); position:sticky; top:0;
+  }
+  tbody td{ padding:9px 12px; border-bottom:1px solid var(--line); vertical-align:middle; }
+  tbody tr:last-child td{ border-bottom:none; }
+  tbody tr:hover{ background:#FAFDFC; }
+  td.num{ font-family:'IBM Plex Mono', monospace; }
+  .badge{ font-size:11px; font-weight:700; padding:3px 8px; border-radius:20px; white-space:nowrap; }
+  .badge.ok{ background:var(--green-bg); color:var(--green); }
+  .badge.warning{ background:var(--amber-bg); color:var(--amber); }
+  .badge.danger{ background:var(--red-bg); color:var(--red); }
+  .row-actions{ display:flex; gap:6px; }
+  .icon-btn{
+    border:none; background:none; cursor:pointer; color:var(--ink-soft); font-size:14px; padding:2px 4px; border-radius:5px;
+  }
+  .icon-btn:hover{ background:#EEF7F4; color:var(--red); }
+  .empty-row td{ text-align:center; color:var(--ink-soft); padding:26px; font-size:13px; }
+
+  .legend{ display:grid; grid-template-columns: repeat(auto-fit,minmax(220px,1fr)); gap:10px; }
+  .legend .item{ background:var(--card); border:1px solid var(--line); border-radius:12px; padding:12px 14px; font-size:12.5px; color: var(--ink-soft); }
+  .legend .item b{ color: var(--ink); display:block; font-size:13px; margin-bottom:2px; }
+
+  .overlay{ position:fixed; inset:0; background:rgba(11,43,44,0.45); display:none; align-items:center; justify-content:center; z-index:50; padding:16px; }
+  .overlay.open{ display:flex; }
+  .modal{ background:#fff; border-radius: var(--radius); padding:22px; width:100%; max-width:420px; box-shadow: var(--shadow); }
+  .modal h3{ margin:0 0 14px; font-family:'Space Grotesk', sans-serif; color:var(--teal-deep); }
+  .modal .field{ margin-bottom:12px; }
+
+  .toast{
+    position:fixed; bottom:20px; left:50%; transform:translateX(-50%);
+    background: var(--teal-deep); color:#fff; padding:10px 18px; border-radius:9px; font-size:13px;
+    box-shadow: var(--shadow); opacity:0; pointer-events:none; transition:opacity .25s;
+    font-family:'Inter', sans-serif; z-index:60;
+  }
+  .toast.show{ opacity:1; }
+  .sync-note{ font-size:11.5px; color:var(--ink-soft); margin-top:6px; }
+  ::placeholder{ color:#9FB8B4; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="app">
+    <button class="btn-config" id="btnConfig">⚙ Configurações</button>
+    <div class="brand">
+      <div class="brand-mark">Cl₂</div>
+      <div>
+        <div class="brand-name">ClorLog</div>
+        <div class="brand-tag">Controle diário de cloro residual livre</div>
+      </div>
+    </div>
+    <div class="meta-row">
+      <div class="meta-item"><div class="k">Empresa / Propriedade</div><div class="v" id="metaEmpresa">—</div></div>
+      <div class="meta-item"><div class="k">Responsável técnico</div><div class="v" id="metaResponsavel">—</div></div>
+      <div class="meta-item"><div class="k">Registros neste mês</div><div class="v" id="metaCount">0</div></div>
+    </div>
+  </header>
+
+  <div class="section">
+    <div class="section-head">
+      <div class="section-title"><span class="num">01</span> Painel dos pontos de coleta</div>
+      <div class="section-sub">Última leitura de cada ponto — faixa de 0 a 5 mg/L</div>
+    </div>
+    <div class="dash-grid" id="dashGrid"></div>
+  </div>
+
+  <div class="section">
+    <div class="section-head">
+      <div class="section-title"><span class="num">02</span> Novo registro</div>
+      <div class="section-sub">Preencha após cada medição</div>
+    </div>
+    <div class="card">
+      <form id="entryForm">
+        <div class="form-grid">
+          <div class="field">
+            <label for="fData">Data</label>
+            <input type="date" id="fData" required>
+          </div>
+          <div class="field">
+            <label for="fHora">Hora</label>
+            <input type="time" id="fHora" required>
+          </div>
+          <div class="field">
+            <label for="fPonto">Ponto de coleta</label>
+            <input list="pontosList" id="fPonto" placeholder="Ex: Saída do poço" required>
+            <datalist id="pontosList"></datalist>
+          </div>
+          <div class="field">
+            <label for="fCloro">Teor de cloro (mg/L)</label>
+            <input type="number" step="0.01" min="0" id="fCloro" placeholder="0,00" required>
+          </div>
+          <div class="field">
+            <label for="fPh">pH (opcional)</label>
+            <input type="number" step="0.1" min="0" max="14" id="fPh" placeholder="Ex: 7,2">
+          </div>
+          <div class="field">
+            <label for="fOperador">Operador / rubrica</label>
+            <input type="text" id="fOperador" placeholder="Nome de quem mediu">
+          </div>
+          <div class="field full">
+            <label for="fAcao">Ação corretiva (se houver desvio)</label>
+            <input type="text" id="fAcao" placeholder="Ex: ajustado dosador de cloro">
+          </div>
+        </div>
+        <div class="status-preview" id="statusPreview" style="display:none;"></div>
+        <div class="actions-row">
+          <button type="submit" class="primary">Salvar registro</button>
+          <button type="button" class="secondary" id="btnClearForm">Limpar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-head">
+      <div class="section-title"><span class="num">03</span> Histórico de registros</div>
+      <div class="section-sub" id="syncNote">carregando dados…</div>
+    </div>
+    <div class="card">
+      <div class="filters">
+        <div class="field">
+          <label for="filterMes">Mês de referência</label>
+          <input type="month" id="filterMes">
+        </div>
+        <div class="field">
+          <label for="filterPonto">Ponto de coleta</label>
+          <select id="filterPonto"><option value="">Todos</option></select>
+        </div>
+        <div class="field">
+          <label for="filterStatus">Status</label>
+          <select id="filterStatus">
+            <option value="">Todos</option>
+            <option value="ok">OK</option>
+            <option value="warning">Desvio (acima do recomendado)</option>
+            <option value="danger">Desvio crítico</option>
+          </select>
+        </div>
+        <div class="field">
+          <button type="button" class="secondary" id="btnExport">Exportar CSV</button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Data</th><th>Hora</th><th>Ponto</th><th>Cloro (mg/L)</th><th>pH</th>
+              <th>Status</th><th>Ação corretiva</th><th>Operador</th><th></th>
+            </tr>
+          </thead>
+          <tbody id="tableBody">
+            <tr class="empty-row"><td colspan="9">Carregando registros…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-head">
+      <div class="section-title"><span class="num">04</span> Legenda e limites legais</div>
+    </div>
+    <div class="legend">
+      <div class="item"><b>Mínimo obrigatório — 0,2 mg/L</b>Abaixo disso é desvio crítico: a água não está protegida contra contaminação.</div>
+      <div class="item"><b>Faixa recomendada — 0,5 a 2,0 mg/L</b>Garante segurança sem gerar gosto ou odor forte de cloro.</div>
+      <div class="item"><b>Limite máximo — 5,0 mg/L</b>Acima disso é desvio crítico: excesso de cloro, também considerado inadequado.</div>
+      <div class="item"><b>Ação corretiva</b>Registre sempre que houver desvio, descrevendo o que foi feito.</div>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="configOverlay">
+  <div class="modal">
+    <h3>Configurações do ponto</h3>
+    <div class="field">
+      <label for="cfgEmpresa">Empresa / Propriedade</label>
+      <input type="text" id="cfgEmpresa" placeholder="Ex: Sítio Boa Vista">
+    </div>
+    <div class="field">
+      <label for="cfgResponsavel">Responsável técnico / Operador</label>
+      <input type="text" id="cfgResponsavel" placeholder="Nome do responsável">
+    </div>
+    <div class="actions-row">
+      <button type="button" class="primary" id="btnSaveConfig">Salvar</button>
+      <button type="button" class="secondary" id="btnCloseConfig">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  let entries = [];
+  let pontos = [];
+  let config = { empresa: '', responsavel: '' };
+
+  const $ = (id) => document.getElementById(id);
+  const toastEl = $('toast');
+  function showToast(msg){
+    toastEl.textContent = msg;
+    toastEl.classList.add('show');
+    setTimeout(()=> toastEl.classList.remove('show'), 2200);
+  }
+
+  function getStatus(cloro){
+    if (cloro === null || isNaN(cloro)) return { status:'—', level:'warning', label:'Valor inválido' };
+    if (cloro < 0.2) return { status:'Desvio', level:'danger', label:'Abaixo do mínimo legal (0,2 mg/L)' };
+    if (cloro > 5.0) return { status:'Desvio', level:'danger', label:'Acima do limite máximo (5,0 mg/L)' };
+    if (cloro >= 0.2 && cloro <= 2.0) return { status:'OK', level:'ok', label:'Dentro da faixa ideal' };
+    return { status:'Desvio', level:'warning', label:'Acima da faixa recomendada (2,0 mg/L)' };
+  }
+
+  function tubeMarkerPercent(cloro){
+    const clamped = Math.max(0, Math.min(cloro, 5));
+    return (clamped / 5) * 100;
+  }
+
+  function renderTube(cloro){
+    const pct = tubeMarkerPercent(cloro);
+    return `<div class="tube"><div class="marker" style="left:${pct}%"></div></div>
+      <div class="tube-scale"><span>0</span><span>0,2</span><span>2,0</span><span>5,0+</span></div>`;
+  }
+
+  async function loadAll(){
+    try{
+      const res = await fetch('/api/data');
+      const data = await res.json();
+      entries = data.entries || [];
+      pontos = data.pontos || [];
+      config = data.config || { empresa:'', responsavel:'' };
+      $('syncNote').textContent = 'dados sincronizados via nuvem (Google Cloud)';
+    }catch(err){
+      console.error('Erro ao carregar dados', err);
+      $('syncNote').textContent = 'não foi possível sincronizar — tente recarregar a página';
+    }
+    renderConfig();
+    renderPontosList();
+    renderDashboard();
+    renderTable();
+  }
+
+  function renderConfig(){
+    $('metaEmpresa').textContent = config.empresa || 'Clique em Configurações';
+    $('metaResponsavel').textContent = config.responsavel || '—';
+    $('cfgEmpresa').value = config.empresa || '';
+    $('cfgResponsavel').value = config.responsavel || '';
+  }
+
+  function renderPontosList(){
+    const dl = $('pontosList');
+    dl.innerHTML = pontos.map(p => `<option value="${escapeHtml(p)}">`).join('');
+    const sel = $('filterPonto');
+    const current = sel.value;
+    sel.innerHTML = '<option value="">Todos</option>' + pontos.map(p => `<option value="${escapeHtml(p)}">${escapeHtml(p)}</option>`).join('');
+    sel.value = current;
+  }
+
+  function escapeHtml(str){
+    return String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  function currentMonthKey(){
+    const d = new Date();
+    return d.toISOString().slice(0,7);
+  }
+
+  function renderDashboard(){
+    const grid = $('dashGrid');
+    if (pontos.length === 0){
+      grid.innerHTML = `<div class="dash-empty">Nenhum ponto de coleta cadastrado ainda. Registre uma medição abaixo para começar.</div>`;
+      $('metaCount').textContent = '0';
+      return;
+    }
+    const mesAtual = currentMonthKey();
+    grid.innerHTML = pontos.map(ponto => {
+      const doPonto = entries.filter(e => e.ponto === ponto).sort((a,b)=> (b.data+b.hora).localeCompare(a.data+a.hora));
+      const last = doPonto[0];
+      if (!last){
+        return `<div class="dash-card"><div class="ponto">${escapeHtml(ponto)}</div><div class="sync-note">Sem registros ainda</div></div>`;
+      }
+      const st = getStatus(last.cloro);
+      return `<div class="dash-card">
+        <div class="ponto">${escapeHtml(ponto)}</div>
+        <div class="reading">${last.cloro.toFixed(2)}<span class="unit">mg/L</span></div>
+        <div class="when">${formatDate(last.data)} às ${last.hora}</div>
+        ${renderTube(last.cloro)}
+        <div class="pill ${st.level}">${st.label}</div>
+      </div>`;
+    }).join('');
+    $('metaCount').textContent = String(entries.filter(e => e.data.startsWith(mesAtual)).length);
+  }
+
+  function formatDate(iso){
+    if (!iso) return '';
+    const [y,m,d] = iso.split('-');
+    return `${d}/${m}/${y}`;
+  }
+
+  function renderTable(){
+    const filterMes = $('filterMes').value;
+    const filterPonto = $('filterPonto').value;
+    const filterStatus = $('filterStatus').value;
+    let list = entries.slice().sort((a,b)=> (b.data+b.hora).localeCompare(a.data+a.hora));
+    if (filterMes) list = list.filter(e => e.data.startsWith(filterMes));
+    if (filterPonto) list = list.filter(e => e.ponto === filterPonto);
+    if (filterStatus) list = list.filter(e => getStatus(e.cloro).level === filterStatus);
+
+    const body = $('tableBody');
+    if (list.length === 0){
+      body.innerHTML = `<tr class="empty-row"><td colspan="9">Nenhum registro encontrado para este filtro.</td></tr>`;
+      return;
+    }
+    body.innerHTML = list.map(e => {
+      const st = getStatus(e.cloro);
+      return `<tr>
+        <td>${formatDate(e.data)}</td>
+        <td>${e.hora}</td>
+        <td>${escapeHtml(e.ponto)}</td>
+        <td class="num">${e.cloro.toFixed(2)}</td>
+        <td class="num">${e.ph !== null && e.ph !== undefined && e.ph !== '' ? Number(e.ph).toFixed(1) : '—'}</td>
+        <td><span class="badge ${st.level}">${st.status}</span></td>
+        <td>${escapeHtml(e.acao || (st.level==='ok' ? 'Nenhuma' : '—'))}</td>
+        <td>${escapeHtml(e.operador || '—')}</td>
+        <td class="row-actions"><button class="icon-btn" title="Excluir" data-del="${e.id}">✕</button></td>
+      </tr>`;
+    }).join('');
+
+    body.querySelectorAll('[data-del]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const id = btn.getAttribute('data-del');
+        if (!confirm('Excluir este registro?')) return;
+        try {
+          await fetch(`/api/entries/${id}`, { method: 'DELETE' });
+          await loadAll();
+          showToast('Registro excluído.');
+        } catch(err) {
+          showToast('Erro ao excluir.');
+        }
+      });
+    });
+  }
+
+  function updateStatusPreview(){
+    const cloroVal = parseFloat($('fCloro').value);
+    const box = $('statusPreview');
+    if (isNaN(cloroVal)){ box.style.display = 'none'; return; }
+    const st = getStatus(cloroVal);
+    box.style.display = 'flex';
+    box.className = 'status-preview ' + st.level;
+    box.innerHTML = `<span class="dot"></span> ${st.status} — ${st.label}`;
+  }
+
+  $('fCloro').addEventListener('input', updateStatusPreview);
+
+  $('entryForm').addEventListener('submit', async (ev) => {
+    ev.preventDefault();
+    const data = $('fData').value;
+    const hora = $('fHora').value;
+    const ponto = $('fPonto').value.trim();
+    const cloro = parseFloat($('fCloro').value);
+    const ph = $('fPh').value;
+    const operador = $('fOperador').value.trim();
+    const acao = $('fAcao').value.trim();
+    if (!data || !hora || !ponto || isNaN(cloro)){
+      showToast('Preencha data, hora, ponto e teor de cloro.');
+      return;
+    }
+    const entry = {
+      id: Date.now().toString(36) + Math.random().toString(36).slice(2,6),
+      data, hora, ponto, cloro, ph: ph === '' ? null : parseFloat(ph),
+      operador, acao, criadoEm: new Date().toISOString()
+    };
+
+    try {
+      await fetch('/api/entries', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(entry)
+      });
+      await loadAll();
+      $('entryForm').reset();
+      $('statusPreview').style.display = 'none';
+      $('fData').valueAsDate = new Date();
+      $('fHora').value = new Date().toTimeString().slice(0,5);
+      showToast('Registro salvo com sucesso.');
+    } catch(err) {
+      showToast('Erro ao salvar no servidor.');
+    }
+  });
+
+  $('btnClearForm').addEventListener('click', () => {
+    $('entryForm').reset();
+    $('statusPreview').style.display = 'none';
+  });
+
+  $('filterMes').addEventListener('change', renderTable);
+  $('filterPonto').addEventListener('change', renderTable);
+  $('filterStatus').addEventListener('change', renderTable);
+
+  $('btnExport').addEventListener('click', () => {
+    const filterMes = $('filterMes').value;
+    const filterPonto = $('filterPonto').value;
+    let list = entries.slice().sort((a,b)=> (a.data+a.hora).localeCompare(b.data+b.hora));
+    if (filterMes) list = list.filter(e => e.data.startsWith(filterMes));
+    if (filterPonto) list = list.filter(e => e.ponto === filterPonto);
+    if (list.length === 0){ showToast('Nenhum registro para exportar.'); return; }
+    const header = ['Data','Hora','Ponto de coleta','Cloro (mg/L)','pH','Status','Ação corretiva','Operador'];
+    const rows = list.map(e => {
+      const st = getStatus(e.cloro);
+      return [formatDate(e.data), e.hora, e.ponto, e.cloro.toFixed(2), e.ph ?? '', st.status, e.acao || '', e.operador || ''];
+    });
+    const csv = [header, ...rows].map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(';')).join('\n');
+    const blob = new Blob(['\uFEFF' + csv], { type:'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `controle-cloro-${filterMes || 'todos'}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  });
+
+  $('btnConfig').addEventListener('click', () => $('configOverlay').classList.add('open'));
+  $('btnCloseConfig').addEventListener('click', () => $('configOverlay').classList.remove('open'));
+  $('configOverlay').addEventListener('click', (e) => { if (e.target.id === 'configOverlay') $('configOverlay').classList.remove('open'); });
+  
+  $('btnSaveConfig').addEventListener('click', async () => {
+    config.empresa = $('cfgEmpresa').value.trim();
+    config.responsavel = $('cfgResponsavel').value.trim();
+    try {
+      await fetch('/api/config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(config)
+      });
+      renderConfig();
+      $('configOverlay').classList.remove('open');
+      showToast('Configurações salvas.');
+    } catch(err) {
+      showToast('Erro ao salvar configurações.');
+    }
+  });
+
+  $('fData').valueAsDate = new Date();
+  $('filterMes').value = currentMonthKey();
+  $('fHora').value = new Date().toTimeString().slice(0,5);
+
+  loadAll();
+})();
+</script>
+</body>
+</html>
