@@ -38,7 +38,15 @@ const initDb = async () => {
         value TEXT
       );
     `);
-    console.log('Conectado e tabelas verificadas no PostgreSQL do Neon.');
+
+    // Inserir unidades padrão se não existirem nas configurações
+    await pool.query(`
+      INSERT INTO config (key, value) 
+      VALUES ('unidades', 'CNPSO LDN,CNPSO FMPGA')
+      ON CONFLICT (key) DO NOTHING;
+    `);
+
+    console.log('Conectado ao PostgreSQL do Neon. Tabelas e configurações de unidades inicializadas.');
   } catch (err) {
     console.error('Erro ao inicializar o banco PostgreSQL:', err.message);
   }
@@ -49,16 +57,26 @@ initDb();
 // Rotas da API
 app.get('/api/data', async (req, res) => {
   try {
-    const entriesRes = await pool.query('SELECT * FROM entries');
+    const entriesRes = await pool.query('SELECT * FROM entries ORDER BY criadoEm DESC');
     const configsRes = await pool.query('SELECT * FROM config');
 
     const entries = entriesRes.rows;
     const configs = configsRes.rows;
 
-    const configObj = {};
-    configs.forEach(c => { configObj[c.key] = c.value; });
+    const configObj = {
+      empresa: '',
+      responsavel: '',
+      unidades: 'CNPSO LDN,CNPSO FMPGA'
+    };
+    
+    configs.forEach(c => { 
+      configObj[c.key] = c.value; 
+    });
 
-    const pontos = [...new Set(entries.map(e => e.ponto))];
+    // Garante que as unidades padrão apareçam na lista de pontos/locais
+    const pontosPadrao = ['CNPSO LDN', 'CNPSO FMPGA'];
+    const pontosRegistrados = entries.map(e => e.ponto).filter(Boolean);
+    const pontos = [...new Set([...pontosPadrao, ...pontosRegistrados])];
 
     res.json({ entries, pontos, config: configObj });
   } catch (err) {
@@ -71,6 +89,15 @@ app.post('/api/entries', async (req, res) => {
   const query = `
     INSERT INTO entries (id, data, hora, ponto, cloro, ph, operador, acao, criadoEm) 
     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+    ON CONFLICT (id) DO UPDATE SET
+      data = EXCLUDED.data,
+      hora = EXCLUDED.hora,
+      ponto = EXCLUDED.ponto,
+      cloro = EXCLUDED.cloro,
+      ph = EXCLUDED.ph,
+      operador = EXCLUDED.operador,
+      acao = EXCLUDED.acao,
+      criadoEm = EXCLUDED.criadoEm
   `;
   try {
     await pool.query(query, [id, data, hora, ponto, cloro, ph, operador, acao, criadoEm]);
@@ -90,6 +117,7 @@ app.delete('/api/entries/:id', async (req, res) => {
   }
 });
 
+// Salvar/Atualizar Empresa e Responsável Técnico nas Configurações
 app.post('/api/config', async (req, res) => {
   const { empresa, responsavel } = req.body;
   const query = `
