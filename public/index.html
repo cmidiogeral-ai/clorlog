@@ -1,593 +1,499 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ClorLog — Controle de Cloro Residual</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Mono:wght@500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<style>
-  :root{
-    --bg: #F4FAF8;
-    --ink: #0B2B2C;
-    --ink-soft: #4A6664;
-    --teal: #0E5C56;
-    --teal-deep: #073B38;
-    --aqua: #12A594;
-    --line: #D9E8E5;
-    --card: #FFFFFF;
-    --amber: #C9821B;
-    --amber-bg: #FCF1DF;
-    --red: #C13A34;
-    --red-bg: #FBE7E5;
-    --green-bg: #E4F5EF;
-    --green: #0E7A54;
-    --radius: 14px;
-    --shadow: 0 1px 2px rgba(11,43,44,0.06), 0 8px 24px -12px rgba(11,43,44,0.18);
-  }
-  *{box-sizing:border-box;}
-  body{
-    margin:0;
-    background: var(--bg);
-    color: var(--ink);
-    font-family: 'Inter', sans-serif;
-    -webkit-font-smoothing:antialiased;
-  }
-  .wrap{ max-width: 980px; margin: 0 auto; padding: 20px 16px 60px; }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ClorLog - Controle Diário de Cloro</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { background-color: #f3f4f6; color: #1f2937; }
+    .bg-teal-custom { background-color: #064e3b; }
 
-  header.app{
-    background: linear-gradient(135deg, var(--teal-deep), var(--teal) 65%, var(--aqua));
-    border-radius: var(--radius);
-    color: #EAF7F4;
-    padding: 22px 24px;
-    box-shadow: var(--shadow);
-    position: relative;
-    overflow: hidden;
-  }
-  header.app::after{
-    content:"";
-    position:absolute; right:-40px; top:-40px; width:160px; height:160px;
-    border-radius:50%;
-    background: radial-gradient(circle, rgba(255,255,255,0.12), transparent 70%);
-  }
-  .brand{ display:flex; align-items:center; gap:10px; }
-  .brand-mark{
-    width:34px; height:34px; border-radius:9px;
-    background: rgba(255,255,255,0.14);
-    display:flex; align-items:center; justify-content:center;
-    font-family:'Space Grotesk', sans-serif; font-weight:700; font-size:15px;
-    border:1px solid rgba(255,255,255,0.25);
-  }
-  .brand-name{ font-family:'Space Grotesk', sans-serif; font-weight:700; font-size:20px; letter-spacing:0.2px; }
-  .brand-tag{ font-size:11.5px; color:#C9E9E2; margin-top:1px; letter-spacing:0.3px; text-transform:uppercase; }
-  .meta-row{ display:flex; flex-wrap:wrap; gap:22px; margin-top:18px; }
-  .meta-item .k{ font-size:10.5px; text-transform:uppercase; letter-spacing:0.6px; color:#B9E3DB; }
-  .meta-item .v{ font-family:'Space Grotesk', sans-serif; font-weight:600; font-size:15px; margin-top:2px; }
-  .btn-config{
-    position:absolute; top:20px; right:20px;
-    background: rgba(255,255,255,0.14); border:1px solid rgba(255,255,255,0.28);
-    color:#EAF7F4; border-radius:9px; padding:7px 12px; font-size:12.5px; font-weight:600;
-    cursor:pointer; font-family:'Inter', sans-serif;
-  }
-  .btn-config:hover{ background: rgba(255,255,255,0.22); }
-
-  .section{ margin-top: 26px; }
-  .section-head{ display:flex; align-items:baseline; justify-content:space-between; gap:12px; margin-bottom:12px; flex-wrap:wrap; }
-  .section-title{ font-family:'Space Grotesk', sans-serif; font-weight:700; font-size:16px; color: var(--teal-deep); display:flex; align-items:center; gap:8px;}
-  .section-title .num{ font-family:'IBM Plex Mono', monospace; color: var(--aqua); font-size:13px; }
-  .section-sub{ font-size:12.5px; color:var(--ink-soft); }
-
-  .dash-grid{ display:grid; grid-template-columns: repeat(auto-fit, minmax(240px,1fr)); gap:14px; }
-  .dash-card{
-    background: var(--card); border:1px solid var(--line); border-radius: var(--radius);
-    padding: 16px; box-shadow: var(--shadow);
-  }
-  .dash-card .ponto{ font-weight:700; font-size:14px; color: var(--teal-deep); }
-  .dash-card .reading{
-    font-family:'IBM Plex Mono', monospace; font-size:28px; font-weight:600; margin-top:6px;
-  }
-  .dash-card .reading .unit{ font-size:13px; color: var(--ink-soft); font-weight:500; margin-left:4px;}
-  .dash-card .when{ font-size:11px; color: var(--ink-soft); margin-top:2px; }
-  .tube{ margin-top:12px; height:14px; border-radius:7px; position:relative; overflow:visible;
-    background: linear-gradient(to right,
-      var(--red) 0%, var(--red) 4%,
-      var(--green) 4%, var(--green) 40%,
-      var(--amber) 40%, var(--amber) 100%);
-  }
-  .tube .marker{
-    position:absolute; top:-4px; width:3px; height:22px; background: var(--ink);
-    border-radius:2px; transform: translateX(-50%);
-  }
-  .tube .marker::after{
-    content:""; position:absolute; top:-5px; left:50%; transform:translateX(-50%);
-    border-left:4px solid transparent; border-right:4px solid transparent; border-bottom:5px solid var(--ink);
-  }
-  .tube-scale{ display:flex; justify-content:space-between; font-size:9.5px; color:var(--ink-soft); margin-top:3px; font-family:'IBM Plex Mono', monospace;}
-  .pill{ display:inline-block; margin-top:10px; font-size:11.5px; font-weight:600; padding:3px 9px; border-radius:20px; }
-  .pill.ok{ background: var(--green-bg); color: var(--green); }
-  .pill.warning{ background: var(--amber-bg); color: var(--amber); }
-  .pill.danger{ background: var(--red-bg); color: var(--red); }
-  .dash-empty{ color:var(--ink-soft); font-size:13px; padding: 18px; background:var(--card); border:1px dashed var(--line); border-radius:var(--radius); }
-
-  .card{ background: var(--card); border:1px solid var(--line); border-radius: var(--radius); padding:18px; box-shadow: var(--shadow); }
-  .form-grid{ display:grid; grid-template-columns: repeat(auto-fit, minmax(150px,1fr)); gap:12px; }
-  .field label{ font-size:11.5px; font-weight:600; text-transform:uppercase; letter-spacing:0.3px; color: var(--ink-soft); display:block; margin-bottom:5px; }
-  .field input, .field select{
-    width:100%; padding:9px 10px; border-radius:8px; border:1px solid var(--line);
-    font-family:'Inter', sans-serif; font-size:14px; background:#FBFDFC; color:var(--ink);
-  }
-  .field input:focus, .field select:focus{ outline:2px solid var(--aqua); outline-offset:1px; border-color:var(--aqua); }
-  .field.full{ grid-column: 1 / -1; }
-  .status-preview{ margin-top:14px; padding:10px 12px; border-radius:9px; font-size:13px; display:flex; align-items:center; gap:8px; }
-  .status-preview.ok{ background:var(--green-bg); color:var(--green); }
-  .status-preview.warning{ background:var(--amber-bg); color:var(--amber); }
-  .status-preview.danger{ background:var(--red-bg); color:var(--red); }
-  .dot{ width:8px; height:8px; border-radius:50%; background:currentColor; flex-shrink:0; }
-  .actions-row{ margin-top:14px; display:flex; gap:10px; flex-wrap:wrap; }
-  button.primary{
-    background: var(--teal); color:#fff; border:none; border-radius:9px; padding:10px 18px;
-    font-weight:600; font-size:13.5px; cursor:pointer; font-family:'Inter', sans-serif;
-  }
-  button.primary:hover{ background: var(--teal-deep); }
-  button.secondary{
-    background:#fff; color:var(--teal); border:1px solid var(--line); border-radius:9px; padding:10px 16px;
-    font-weight:600; font-size:13.5px; cursor:pointer; font-family:'Inter', sans-serif;
-  }
-  button.secondary:hover{ background:#F1F8F6; }
-
-  .filters{ display:flex; gap:10px; flex-wrap:wrap; align-items:end; }
-  .filters .field{ min-width:150px; }
-  .table-wrap{ overflow-x:auto; margin-top:14px; border-radius: var(--radius); border:1px solid var(--line); }
-  table{ width:100%; border-collapse:collapse; background:var(--card); font-size:13px; min-width:760px; }
-  thead th{
-    text-align:left; padding:10px 12px; background:#EEF7F4; color:var(--teal-deep);
-    font-size:11px; text-transform:uppercase; letter-spacing:0.4px; font-weight:700;
-    border-bottom:1px solid var(--line); position:sticky; top:0;
-  }
-  tbody td{ padding:9px 12px; border-bottom:1px solid var(--line); vertical-align:middle; }
-  tbody tr:last-child td{ border-bottom:none; }
-  tbody tr:hover{ background:#FAFDFC; }
-  td.num{ font-family:'IBM Plex Mono', monospace; }
-  .badge{ font-size:11px; font-weight:700; padding:3px 8px; border-radius:20px; white-space:nowrap; }
-  .badge.ok{ background:var(--green-bg); color:var(--green); }
-  .badge.warning{ background:var(--amber-bg); color:var(--amber); }
-  .badge.danger{ background:var(--red-bg); color:var(--red); }
-  .row-actions{ display:flex; gap:6px; }
-  .icon-btn{
-    border:none; background:none; cursor:pointer; color:var(--ink-soft); font-size:14px; padding:2px 4px; border-radius:5px;
-  }
-  .icon-btn:hover{ background:#EEF7F4; color:var(--red); }
-  .empty-row td{ text-align:center; color:var(--ink-soft); padding:26px; font-size:13px; }
-
-  .legend{ display:grid; grid-template-columns: repeat(auto-fit,minmax(220px,1fr)); gap:10px; }
-  .legend .item{ background:var(--card); border:1px solid var(--line); border-radius:12px; padding:12px 14px; font-size:12.5px; color: var(--ink-soft); }
-  .legend .item b{ color: var(--ink); display:block; font-size:13px; margin-bottom:2px; }
-
-  .overlay{ position:fixed; inset:0; background:rgba(11,43,44,0.45); display:none; align-items:center; justify-content:center; z-index:50; padding:16px; }
-  .overlay.open{ display:flex; }
-  .modal{ background:#fff; border-radius: var(--radius); padding:22px; width:100%; max-width:420px; box-shadow: var(--shadow); }
-  .modal h3{ margin:0 0 14px; font-family:'Space Grotesk', sans-serif; color:var(--teal-deep); }
-  .modal .field{ margin-bottom:12px; }
-
-  .toast{
-    position:fixed; bottom:20px; left:50%; transform:translateX(-50%);
-    background: var(--teal-deep); color:#fff; padding:10px 18px; border-radius:9px; font-size:13px;
-    box-shadow: var(--shadow); opacity:0; pointer-events:none; transition:opacity .25s;
-    font-family:'Inter', sans-serif; z-index:60;
-  }
-  .toast.show{ opacity:1; }
-  .sync-note{ font-size:11.5px; color:var(--ink-soft); margin-top:6px; }
-  ::placeholder{ color:#9FB8B4; }
-</style>
+    /* ESTILOS ESPECÍFICOS PARA IMPRESSÃO DO RELATÓRIO (PDF/PAPEL) */
+    @media print {
+      body { background-color: white !important; color: black !important; padding: 0 !important; }
+      header, section, #formRegistro, #modalConfig, .no-print { display: none !important; }
+      #areaRelatorio { display: block !important; }
+    }
+    #areaRelatorio { display: none; }
+  </style>
 </head>
-<body>
-<div class="wrap">
+<body class="p-4 md:p-8 max-w-6xl mx-auto">
 
-  <header class="app">
-    <button class="btn-config" id="btnConfig">⚙ Configurações</button>
-    <div class="brand">
-      <div class="brand-mark">Cl₂</div>
+  <!-- TOPBAR / CABEÇALHO -->
+  <header class="bg-teal-custom text-white p-6 rounded-2xl shadow-lg mb-6">
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
       <div>
-        <div class="brand-name">ClorLog</div>
-        <div class="brand-tag">Controle diário de cloro residual livre</div>
+        <h1 class="text-2xl font-bold flex items-center gap-2">
+          <span class="bg-teal-800 text-xs px-2 py-1 rounded">Cl₂</span> ClorLog
+        </h1>
+        <p class="text-xs text-teal-200 uppercase tracking-wide">Controle Diário de Cloro Residual Livre</p>
+      </div>
+
+      <div class="flex flex-wrap items-center gap-3">
+        <!-- SELETOR DE UNIDADES -->
+        <div>
+          <label class="block text-xs text-teal-200 font-semibold mb-1">UNIDADE ATIVA:</label>
+          <select id="selectUnidadeAtiva" onchange="trocarUnidadeAtiva()" class="bg-teal-900 text-white font-bold text-sm rounded-lg p-2 border border-teal-700 outline-none">
+            <option value="">Nenhuma unidade cadastrada</option>
+          </select>
+        </div>
+
+        <button onclick="gerarRelatorio()" class="bg-emerald-700 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm font-semibold border border-emerald-500 transition mt-4 md:mt-0">
+          📄 Gerar Relatório
+        </button>
+
+        <button onclick="abrirModalConfig()" class="bg-teal-800 hover:bg-teal-700 text-white px-4 py-2 rounded-lg text-sm font-semibold border border-teal-600 transition mt-4 md:mt-0">
+          ⚙️ Configurações
+        </button>
       </div>
     </div>
-    <div class="meta-row">
-      <div class="meta-item"><div class="k">Empresa / Propriedade</div><div class="v" id="metaEmpresa">—</div></div>
-      <div class="meta-item"><div class="k">Responsável técnico</div><div class="v" id="metaResponsavel">—</div></div>
-      <div class="meta-item"><div class="k">Registros neste mês</div><div class="v" id="metaCount">0</div></div>
+
+    <!-- INFORMAÇÕES DA UNIDADE / EMPRESA -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6 pt-4 border-t border-teal-800/60 text-xs">
+      <div>
+        <span class="text-teal-300 block font-semibold uppercase">Empresa / Propriedade</span>
+        <strong id="lblEmpresa" class="text-sm font-medium text-white">Aguardando configuração...</strong>
+      </div>
+      <div>
+        <span class="text-teal-300 block font-semibold uppercase">Responsável Técnico</span>
+        <strong id="lblResponsavel" class="text-sm font-medium text-white">—</strong>
+      </div>
+      <div>
+        <span class="text-teal-300 block font-semibold uppercase">Registros nesta Unidade</span>
+        <strong id="lblTotalRegistros" class="text-sm font-medium text-white">0</strong>
+      </div>
     </div>
   </header>
 
-  <div class="section">
-    <div class="section-head">
-      <div class="section-title"><span class="num">01</span> Painel dos pontos de coleta</div>
-      <div class="section-sub">Última leitura de cada ponto — faixa de 0 a 5 mg/L</div>
+  <!-- PAINEL DOS PONTOS DE COLETA DA UNIDADE -->
+  <section class="mb-8">
+    <div class="flex justify-between items-center mb-4">
+      <h2 class="text-lg font-bold text-teal-900 flex items-center gap-2">
+        <span class="text-teal-600">01</span> Painel dos pontos de coleta
+      </h2>
+      <span class="text-xs text-gray-500">Exibindo pontos da unidade selecionada</span>
     </div>
-    <div class="dash-grid" id="dashGrid"></div>
+
+    <div id="gridPontos" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div class="col-span-3 bg-white p-8 rounded-xl text-center text-gray-400 border border-dashed border-gray-300">
+        Cadastre unidades nas Configurações para começar a inserir medições.
+      </div>
+    </div>
+  </section>
+
+  <!-- FORMULÁRIO DE REGISTRO -->
+  <section class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 mb-8">
+    <h2 class="text-lg font-bold text-teal-900 mb-4 flex items-center gap-2">
+      <span class="text-teal-600">02</span> Novo registro
+    </h2>
+
+    <form id="formRegistro" onsubmit="salvarRegistro(event)" class="space-y-4">
+      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3">
+        <div>
+          <label class="block text-xs font-bold text-gray-600 mb-1">DATA</label>
+          <input type="date" id="regData" required class="w-full p-2 border rounded-lg text-sm bg-gray-50 focus:bg-white outline-none border-gray-300">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-gray-600 mb-1">HORA</label>
+          <input type="time" id="regHora" required class="w-full p-2 border rounded-lg text-sm bg-gray-50 focus:bg-white outline-none border-gray-300">
+        </div>
+        <div class="md:col-span-1">
+          <label class="block text-xs font-bold text-gray-600 mb-1">PONTO DE COLETA</label>
+          <input type="text" id="regPonto" required placeholder="Ex: Poço 1, Cisterna" class="w-full p-2 border rounded-lg text-sm bg-gray-50 focus:bg-white outline-none border-gray-300">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-gray-600 mb-1">TEOR DE CLORO (MG/L)</label>
+          <input type="number" step="0.01" id="regCloro" required placeholder="0,00" class="w-full p-2 border rounded-lg text-sm bg-gray-50 focus:bg-white outline-none border-gray-300">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-gray-600 mb-1">PH (OPCIONAL)</label>
+          <input type="number" step="0.1" id="regPh" placeholder="7.2" class="w-full p-2 border rounded-lg text-sm bg-gray-50 focus:bg-white outline-none border-gray-300">
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div>
+          <label class="block text-xs font-bold text-gray-600 mb-1">OPERADOR / RUBRICA</label>
+          <input type="text" id="regOperador" required placeholder="Nome de quem mediu" class="w-full p-2 border rounded-lg text-sm bg-gray-50 focus:bg-white outline-none border-gray-300">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-gray-600 mb-1">AÇÃO CORRETIVA (SE HOUVER DESVIO)</label>
+          <input type="text" id="regAcao" placeholder="Ex: Ajustado dosador de cloro" class="w-full p-2 border rounded-lg text-sm bg-gray-50 focus:bg-white outline-none border-gray-300">
+        </div>
+      </div>
+
+      <div class="flex gap-2 pt-2">
+        <button type="submit" class="bg-teal-800 hover:bg-teal-900 text-white font-bold px-6 py-2 rounded-lg text-sm transition">
+          Salvar registro
+        </button>
+        <button type="reset" class="bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold px-4 py-2 rounded-lg text-sm transition">
+          Limpar
+        </button>
+      </div>
+    </form>
+  </section>
+
+  <!-- HISTÓRICO DE MEDIÇÕES DA UNIDADE -->
+  <section class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 mb-8">
+    <div class="flex justify-between items-center mb-4">
+      <h2 class="text-lg font-bold text-teal-900 flex items-center gap-2">
+        <span class="text-teal-600">03</span> Histórico de medições
+      </h2>
+      <span class="text-xs text-gray-500">Unidade em exibição</span>
+    </div>
+
+    <div class="overflow-x-auto">
+      <table class="w-full text-left border-collapse text-sm">
+        <thead>
+          <tr class="bg-gray-100 border-b border-gray-200 text-gray-600 text-xs font-bold uppercase">
+            <th class="p-3">Data/Hora</th>
+            <th class="p-3">Ponto</th>
+            <th class="p-3">Cloro (mg/L)</th>
+            <th class="p-3">pH</th>
+            <th class="p-3">Operador</th>
+            <th class="p-3">Ação Corretiva</th>
+            <th class="p-3 text-center">Ações</th>
+          </tr>
+        </thead>
+        <tbody id="tabelaHistorico" class="divide-y divide-gray-100 text-gray-700">
+          <tr>
+            <td colspan="7" class="p-4 text-center text-gray-400">Nenhum registro encontrado.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ESTRUTURA OCULTA DO RELATÓRIO PARA IMPRESSÃO/PDF -->
+  <div id="areaRelatorio">
+    <div class="text-center border-b-2 border-gray-800 pb-4 mb-6">
+      <h1 class="text-2xl font-bold uppercase" id="relEmpresa">NOME DA EMPRESA</h1>
+      <h2 class="text-base font-semibold text-gray-700">Relatório de Monitoramento do Teor de Cloro Residual Livre</h2>
+      <p class="text-sm mt-1"><strong>Unidade:</strong> <span id="relUnidade"></span> | <strong>Emissão:</strong> <span id="relDataEmissao"></span></p>
+    </div>
+
+    <table class="w-full border-collapse border border-gray-400 text-xs mb-12">
+      <thead>
+        <tr class="bg-gray-200 text-gray-800">
+          <th class="border border-gray-400 p-2">Data/Hora</th>
+          <th class="border border-gray-400 p-2">Ponto de Coleta</th>
+          <th class="border border-gray-400 p-2">Cloro (mg/L)</th>
+          <th class="border border-gray-400 p-2">pH</th>
+          <th class="border border-gray-400 p-2">Operador</th>
+          <th class="border border-gray-400 p-2">Ações Corretivas</th>
+        </tr>
+      </thead>
+      <tbody id="relTabelaCorpo">
+        <!-- Linhas inseridas via JS -->
+      </tbody>
+    </table>
+
+    <!-- CAMPO PARA ASSINATURA DO TÉCNICO -->
+    <div class="mt-16 pt-8 grid grid-cols-2 gap-8 text-center text-xs">
+      <div>
+        <div class="border-t border-black w-3/4 mx-auto mb-1"></div>
+        <p class="font-bold">Amostrador / Operador</p>
+      </div>
+      <div>
+        <div class="border-t border-black w-3/4 mx-auto mb-1"></div>
+        <p class="font-bold" id="relAssinaturaTecnico">Responsável Técnico</p>
+        <p class="text-gray-600" id="relResponsavelNome"></p>
+      </div>
+    </div>
   </div>
 
-  <div class="section">
-    <div class="section-head">
-      <div class="section-title"><span class="num">02</span> Novo registro</div>
-      <div class="section-sub">Preencha após cada medição</div>
-    </div>
-    <div class="card">
-      <form id="entryForm">
-        <div class="form-grid">
-          <div class="field">
-            <label for="fData">Data</label>
-            <input type="date" id="fData" required>
-          </div>
-          <div class="field">
-            <label for="fHora">Hora</label>
-            <input type="time" id="fHora" required>
-          </div>
-          <div class="field">
-            <label for="fPonto">Ponto de coleta</label>
-            <input list="pontosList" id="fPonto" placeholder="Ex: Saída do poço" required>
-            <datalist id="pontosList"></datalist>
-          </div>
-          <div class="field">
-            <label for="fCloro">Teor de cloro (mg/L)</label>
-            <input type="number" step="0.01" min="0" id="fCloro" placeholder="0,00" required>
-          </div>
-          <div class="field">
-            <label for="fPh">pH (opcional)</label>
-            <input type="number" step="0.1" min="0" max="14" id="fPh" placeholder="Ex: 7,2">
-          </div>
-          <div class="field">
-            <label for="fOperador">Operador / rubrica</label>
-            <input type="text" id="fOperador" placeholder="Nome de quem mediu">
-          </div>
-          <div class="field full">
-            <label for="fAcao">Ação corretiva (se houver desvio)</label>
-            <input type="text" id="fAcao" placeholder="Ex: ajustado dosador de cloro">
-          </div>
+  <!-- MODAL DE CONFIGURAÇÕES -->
+  <div id="modalConfig" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
+      <div class="flex justify-between items-center border-b pb-3">
+        <h3 class="font-bold text-lg text-gray-800">⚙️ Configurações Gerais</h3>
+        <button onclick="fecharModalConfig()" class="text-gray-400 hover:text-gray-600 font-bold text-xl">&times;</button>
+      </div>
+
+      <form id="formConfig" onsubmit="salvarConfiguracoes(event)" class="space-y-3">
+        <div>
+          <label class="block text-xs font-bold text-gray-600 mb-1">EMPRESA / PROPRIEDADE</label>
+          <input type="text" id="cfgEmpresa" placeholder="Ex: Embrapa Soja" class="w-full p-2 border rounded-lg text-sm outline-none border-gray-300">
         </div>
-        <div class="status-preview" id="statusPreview" style="display:none;"></div>
-        <div class="actions-row">
-          <button type="submit" class="primary">Salvar registro</button>
-          <button type="button" class="secondary" id="btnClearForm">Limpar</button>
+
+        <div>
+          <label class="block text-xs font-bold text-gray-600 mb-1">RESPONSÁVEL TÉCNICO</label>
+          <input type="text" id="cfgResponsavel" placeholder="Ex: Eng. Maria Silva - CRQ 12345" class="w-full p-2 border rounded-lg text-sm outline-none border-gray-300">
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-gray-600 mb-1">UNIDADES (SEPARADAS POR VÍRGULA)</label>
+          <textarea id="cfgUnidades" rows="3" placeholder="Ex: CNPSO LDN, CNPSO FMPGA" class="w-full p-2 border rounded-lg text-sm outline-none border-gray-300"></textarea>
+          <p class="text-[10px] text-gray-500 mt-1">Insira os nomes das unidades separados por vírgula.</p>
+        </div>
+
+        <div class="flex justify-end gap-2 border-t pt-4">
+          <button type="button" onclick="fecharModalConfig()" class="px-4 py-2 text-sm font-semibold text-gray-600 hover:bg-gray-100 rounded-lg">Cancelar</button>
+          <button type="submit" class="px-5 py-2 text-sm font-bold bg-teal-800 hover:bg-teal-900 text-white rounded-lg">Salvar alterações</button>
         </div>
       </form>
     </div>
   </div>
 
-  <div class="section">
-    <div class="section-head">
-      <div class="section-title"><span class="num">03</span> Histórico de registros</div>
-      <div class="section-sub" id="syncNote">carregando dados…</div>
-    </div>
-    <div class="card">
-      <div class="filters">
-        <div class="field">
-          <label for="filterMes">Mês de referência</label>
-          <input type="month" id="filterMes">
-        </div>
-        <div class="field">
-          <label for="filterPonto">Ponto de coleta</label>
-          <select id="filterPonto"><option value="">Todos</option></select>
-        </div>
-        <div class="field">
-          <label for="filterStatus">Status</label>
-          <select id="filterStatus">
-            <option value="">Todos</option>
-            <option value="ok">OK</option>
-            <option value="warning">Desvio (acima do recomendado)</option>
-            <option value="danger">Desvio crítico</option>
-          </select>
-        </div>
-        <div class="field">
-          <button type="button" class="secondary" id="btnExport">Exportar CSV</button>
-        </div>
-      </div>
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Data</th><th>Hora</th><th>Ponto</th><th>Cloro (mg/L)</th><th>pH</th>
-              <th>Status</th><th>Ação corretiva</th><th>Operador</th><th></th>
-            </tr>
-          </thead>
-          <tbody id="tableBody">
-            <tr class="empty-row"><td colspan="9">Carregando registros…</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-  </div>
+  <!-- SCRIPT FRONTEND -->
+  <script>
+    let appData = { entries: [], config: { empresa: '', responsavel: '', unidades: '' } };
+    let unidadeAtiva = '';
 
-  <div class="section">
-    <div class="section-head">
-      <div class="section-title"><span class="num">04</span> Legenda e limites legais</div>
-    </div>
-    <div class="legend">
-      <div class="item"><b>Mínimo obrigatório — 0,2 mg/L</b>Abaixo disso é desvio crítico: a água não está protegida contra contaminação.</div>
-      <div class="item"><b>Faixa recomendada — 0,5 a 2,0 mg/L</b>Garante segurança sem gerar gosto ou odor forte de cloro.</div>
-      <div class="item"><b>Limite máximo — 5,0 mg/L</b>Acima disso é desvio crítico: excesso de cloro, também considerado inadequado.</div>
-      <div class="item"><b>Ação corretiva</b>Registre sempre que houver desvio, descrevendo o que foi feito.</div>
-    </div>
-  </div>
-</div>
+    document.getElementById('regData').valueAsDate = new Date();
+    document.getElementById('regHora').value = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 
-<div class="overlay" id="configOverlay">
-  <div class="modal">
-    <h3>Configurações do ponto</h3>
-    <div class="field">
-      <label for="cfgEmpresa">Empresa / Propriedade</label>
-      <input type="text" id="cfgEmpresa" placeholder="Ex: Sítio Boa Vista">
-    </div>
-    <div class="field">
-      <label for="cfgResponsavel">Responsável técnico / Operador</label>
-      <input type="text" id="cfgResponsavel" placeholder="Nome do responsável">
-    </div>
-    <div class="actions-row">
-      <button type="button" class="primary" id="btnSaveConfig">Salvar</button>
-      <button type="button" class="secondary" id="btnCloseConfig">Cancelar</button>
-    </div>
-  </div>
-</div>
+    async function carregarDados() {
+      try {
+        const res = await fetch('/api/data');
+        appData = await res.json();
 
-<div class="toast" id="toast"></div>
+        document.getElementById('lblEmpresa').innerText = appData.config.empresa || 'Clique em Configurações para preencher';
+        document.getElementById('lblResponsavel').innerText = appData.config.responsavel || '—';
 
-<script>
-(function(){
-  let entries = [];
-  let pontos = [];
-  let config = { empresa: '', responsavel: '' };
+        const select = document.getElementById('selectUnidadeAtiva');
+        select.innerHTML = '';
 
-  const $ = (id) => document.getElementById(id);
-  const toastEl = $('toast');
-  function showToast(msg){
-    toastEl.textContent = msg;
-    toastEl.classList.add('show');
-    setTimeout(()=> toastEl.classList.remove('show'), 2200);
-  }
+        const listaUnidades = appData.config.unidades 
+          ? appData.config.unidades.split(',').map(u => u.trim()).filter(Boolean)
+          : [];
 
-  function getStatus(cloro){
-    if (cloro === null || isNaN(cloro)) return { status:'—', level:'warning', label:'Valor inválido' };
-    if (cloro < 0.2) return { status:'Desvio', level:'danger', label:'Abaixo do mínimo legal (0,2 mg/L)' };
-    if (cloro > 5.0) return { status:'Desvio', level:'danger', label:'Acima do limite máximo (5,0 mg/L)' };
-    if (cloro >= 0.2 && cloro <= 2.0) return { status:'OK', level:'ok', label:'Dentro da faixa ideal' };
-    return { status:'Desvio', level:'warning', label:'Acima da faixa recomendada (2,0 mg/L)' };
-  }
+        if (listaUnidades.length === 0) {
+          select.innerHTML = '<option value="">Nenhuma unidade cadastrada</option>';
+          unidadeAtiva = '';
+        } else {
+          listaUnidades.forEach(u => {
+            const opt = document.createElement('option');
+            opt.value = u;
+            opt.textContent = u;
+            select.appendChild(opt);
+          });
 
-  function tubeMarkerPercent(cloro){
-    const clamped = Math.max(0, Math.min(cloro, 5));
-    return (clamped / 5) * 100;
-  }
+          if (!unidadeAtiva || !listaUnidades.includes(unidadeAtiva)) {
+            unidadeAtiva = listaUnidades[0];
+          }
+          select.value = unidadeAtiva;
+        }
 
-  function renderTube(cloro){
-    const pct = tubeMarkerPercent(cloro);
-    return `<div class="tube"><div class="marker" style="left:${pct}%"></div></div>
-      <div class="tube-scale"><span>0</span><span>0,2</span><span>2,0</span><span>5,0+</span></div>`;
-  }
-
-  async function loadAll(){
-    try{
-      const res = await fetch('/api/data');
-      const data = await res.json();
-      entries = data.entries || [];
-      pontos = data.pontos || [];
-      config = data.config || { empresa:'', responsavel:'' };
-      $('syncNote').textContent = 'dados sincronizados via nuvem (Google Cloud)';
-    }catch(err){
-      console.error('Erro ao carregar dados', err);
-      $('syncNote').textContent = 'não foi possível sincronizar — tente recarregar a página';
-    }
-    renderConfig();
-    renderPontosList();
-    renderDashboard();
-    renderTable();
-  }
-
-  function renderConfig(){
-    $('metaEmpresa').textContent = config.empresa || 'Clique em Configurações';
-    $('metaResponsavel').textContent = config.responsavel || '—';
-    $('cfgEmpresa').value = config.empresa || '';
-    $('cfgResponsavel').value = config.responsavel || '';
-  }
-
-  function renderPontosList(){
-    const dl = $('pontosList');
-    dl.innerHTML = pontos.map(p => `<option value="${escapeHtml(p)}">`).join('');
-    const sel = $('filterPonto');
-    const current = sel.value;
-    sel.innerHTML = '<option value="">Todos</option>' + pontos.map(p => `<option value="${escapeHtml(p)}">${escapeHtml(p)}</option>`).join('');
-    sel.value = current;
-  }
-
-  function escapeHtml(str){
-    return String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  }
-
-  function currentMonthKey(){
-    const d = new Date();
-    return d.toISOString().slice(0,7);
-  }
-
-  function renderDashboard(){
-    const grid = $('dashGrid');
-    if (pontos.length === 0){
-      grid.innerHTML = `<div class="dash-empty">Nenhum ponto de coleta cadastrado ainda. Registre uma medição abaixo para começar.</div>`;
-      $('metaCount').textContent = '0';
-      return;
-    }
-    const mesAtual = currentMonthKey();
-    grid.innerHTML = pontos.map(ponto => {
-      const doPonto = entries.filter(e => e.ponto === ponto).sort((a,b)=> (b.data+b.hora).localeCompare(a.data+a.hora));
-      const last = doPonto[0];
-      if (!last){
-        return `<div class="dash-card"><div class="ponto">${escapeHtml(ponto)}</div><div class="sync-note">Sem registros ainda</div></div>`;
+        renderizarPainelUnidade();
+      } catch (err) {
+        console.error('Erro ao carregar dados:', err);
       }
-      const st = getStatus(last.cloro);
-      return `<div class="dash-card">
-        <div class="ponto">${escapeHtml(ponto)}</div>
-        <div class="reading">${last.cloro.toFixed(2)}<span class="unit">mg/L</span></div>
-        <div class="when">${formatDate(last.data)} às ${last.hora}</div>
-        ${renderTube(last.cloro)}
-        <div class="pill ${st.level}">${st.label}</div>
-      </div>`;
-    }).join('');
-    $('metaCount').textContent = String(entries.filter(e => e.data.startsWith(mesAtual)).length);
-  }
-
-  function formatDate(iso){
-    if (!iso) return '';
-    const [y,m,d] = iso.split('-');
-    return `${d}/${m}/${y}`;
-  }
-
-  function renderTable(){
-    const filterMes = $('filterMes').value;
-    const filterPonto = $('filterPonto').value;
-    const filterStatus = $('filterStatus').value;
-    let list = entries.slice().sort((a,b)=> (b.data+b.hora).localeCompare(a.data+a.hora));
-    if (filterMes) list = list.filter(e => e.data.startsWith(filterMes));
-    if (filterPonto) list = list.filter(e => e.ponto === filterPonto);
-    if (filterStatus) list = list.filter(e => getStatus(e.cloro).level === filterStatus);
-
-    const body = $('tableBody');
-    if (list.length === 0){
-      body.innerHTML = `<tr class="empty-row"><td colspan="9">Nenhum registro encontrado para este filtro.</td></tr>`;
-      return;
     }
-    body.innerHTML = list.map(e => {
-      const st = getStatus(e.cloro);
-      return `<tr>
-        <td>${formatDate(e.data)}</td>
-        <td>${e.hora}</td>
-        <td>${escapeHtml(e.ponto)}</td>
-        <td class="num">${e.cloro.toFixed(2)}</td>
-        <td class="num">${e.ph !== null && e.ph !== undefined && e.ph !== '' ? Number(e.ph).toFixed(1) : '—'}</td>
-        <td><span class="badge ${st.level}">${st.status}</span></td>
-        <td>${escapeHtml(e.acao || (st.level==='ok' ? 'Nenhuma' : '—'))}</td>
-        <td>${escapeHtml(e.operador || '—')}</td>
-        <td class="row-actions"><button class="icon-btn" title="Excluir" data-del="${e.id}">✕</button></td>
-      </tr>`;
-    }).join('');
 
-    body.querySelectorAll('[data-del]').forEach(btn => {
-      btn.addEventListener('click', async () => {
-        const id = btn.getAttribute('data-del');
-        if (!confirm('Excluir este registro?')) return;
-        try {
-          await fetch(`/api/entries/${id}`, { method: 'DELETE' });
-          await loadAll();
-          showToast('Registro excluído.');
-        } catch(err) {
-          showToast('Erro ao excluir.');
+    function trocarUnidadeAtiva() {
+      unidadeAtiva = document.getElementById('selectUnidadeAtiva').value;
+      renderizarPainelUnidade();
+    }
+
+    function renderizarPainelUnidade() {
+      const grid = document.getElementById('gridPontos');
+      const tabela = document.getElementById('tabelaHistorico');
+      grid.innerHTML = '';
+      tabela.innerHTML = '';
+
+      if (!unidadeAtiva) {
+        grid.innerHTML = `
+          <div class="col-span-3 bg-white p-8 rounded-xl text-center text-gray-500 border border-dashed border-gray-300">
+            Acesse <strong>Configurações</strong> e insira suas Unidades (ex: CNPSO LDN, CNPSO FMPGA).
+          </div>
+        `;
+        tabela.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-gray-400">Nenhuma unidade selecionada.</td></tr>`;
+        document.getElementById('lblTotalRegistros').innerText = '0';
+        return;
+      }
+
+      const registrosUnidade = appData.entries.filter(e => e.unidade === unidadeAtiva);
+      document.getElementById('lblTotalRegistros').innerText = registrosUnidade.length;
+
+      // 1. RENDERIZAR PAINEL
+      const pontosMap = {};
+      registrosUnidade.forEach(e => {
+        if (!pontosMap[e.ponto]) {
+          pontosMap[e.ponto] = e;
         }
       });
-    });
-  }
 
-  function updateStatusPreview(){
-    const cloroVal = parseFloat($('fCloro').value);
-    const box = $('statusPreview');
-    if (isNaN(cloroVal)){ box.style.display = 'none'; return; }
-    const st = getStatus(cloroVal);
-    box.style.display = 'flex';
-    box.className = 'status-preview ' + st.level;
-    box.innerHTML = `<span class="dot"></span> ${st.status} — ${st.label}`;
-  }
+      const pontosUnicos = Object.keys(pontosMap);
 
-  $('fCloro').addEventListener('input', updateStatusPreview);
+      if (pontosUnicos.length === 0) {
+        grid.innerHTML = `
+          <div class="col-span-3 bg-white p-6 rounded-xl text-center text-gray-400">
+            Nenhum ponto registrado para a unidade <strong>${unidadeAtiva}</strong> ainda.
+          </div>
+        `;
+      } else {
+        pontosUnicos.forEach(ponto => {
+          const item = pontosMap[ponto];
+          const statusCor = (item.cloro >= 0.2 && item.cloro <= 2.0) ? 'text-emerald-600 bg-emerald-50' : 'text-amber-600 bg-amber-50';
+          const statusTexto = (item.cloro >= 0.2 && item.cloro <= 2.0) ? 'Dentro da faixa ideal' : 'Fora da faixa recomendada';
 
-  $('entryForm').addEventListener('submit', async (ev) => {
-    ev.preventDefault();
-    const data = $('fData').value;
-    const hora = $('fHora').value;
-    const ponto = $('fPonto').value.trim();
-    const cloro = parseFloat($('fCloro').value);
-    const ph = $('fPh').value;
-    const operador = $('fOperador').value.trim();
-    const acao = $('fAcao').value.trim();
-    if (!data || !hora || !ponto || isNaN(cloro)){
-      showToast('Preencha data, hora, ponto e teor de cloro.');
-      return;
+          grid.innerHTML += `
+            <div class="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition">
+              <h3 class="font-bold text-gray-800 text-base">${item.ponto}</h3>
+              <div class="mt-2 flex items-baseline gap-1">
+                <span class="text-3xl font-extrabold text-gray-900">${Number(item.cloro).toFixed(2)}</span>
+                <span class="text-xs font-semibold text-gray-500">mg/L</span>
+              </div>
+              <p class="text-[11px] text-gray-400 mt-1">${item.data} às ${item.hora}</p>
+              <div class="mt-3 inline-block px-2.5 py-1 rounded-full text-xs font-bold ${statusCor}">
+                ${statusTexto}
+              </div>
+            </div>
+          `;
+        });
+      }
+
+      // 2. RENDERIZAR TABELA DE HISTÓRICO
+      if (registrosUnidade.length === 0) {
+        tabela.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-gray-400">Nenhum histórico para esta unidade.</td></tr>`;
+      } else {
+        registrosUnidade.forEach(reg => {
+          tabela.innerHTML += `
+            <tr class="hover:bg-gray-50 transition">
+              <td class="p-3 font-semibold">${reg.data} ${reg.hora}</td>
+              <td class="p-3">${reg.ponto}</td>
+              <td class="p-3 font-bold">${Number(reg.cloro).toFixed(2)}</td>
+              <td class="p-3">${reg.ph ? Number(reg.ph).toFixed(1) : '—'}</td>
+              <td class="p-3">${reg.operador}</td>
+              <td class="p-3 text-xs text-gray-500">${reg.acao || '—'}</td>
+              <td class="p-3 text-center">
+                <button onclick="excluirRegistro('${reg.id}')" class="text-red-500 hover:text-red-700 font-bold text-xs bg-red-50 hover:bg-red-100 px-2 py-1 rounded transition">
+                  Excluir
+                </button>
+              </td>
+            </tr>
+          `;
+        });
+      }
     }
-    const entry = {
-      id: Date.now().toString(36) + Math.random().toString(36).slice(2,6),
-      data, hora, ponto, cloro, ph: ph === '' ? null : parseFloat(ph),
-      operador, acao, criadoEm: new Date().toISOString()
-    };
 
-    try {
-      await fetch('/api/entries', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(entry)
+    async function salvarRegistro(e) {
+      e.preventDefault();
+
+      if (!unidadeAtiva) {
+        alert('Por favor, cadastre e selecione uma Unidade antes de registrar medições.');
+        abrirModalConfig();
+        return;
+      }
+
+      const novo = {
+        id: Date.now().toString(),
+        unidade: unidadeAtiva,
+        data: document.getElementById('regData').value,
+        hora: document.getElementById('regHora').value,
+        ponto: document.getElementById('regPonto').value.trim(),
+        cloro: parseFloat(document.getElementById('regCloro').value),
+        ph: parseFloat(document.getElementById('regPh').value) || null,
+        operador: document.getElementById('regOperador').value.trim(),
+        acao: document.getElementById('regAcao').value.trim(),
+        criadoEm: new Date().toISOString()
+      };
+
+      try {
+        const res = await fetch('/api/entries', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(novo)
+        });
+
+        if (res.ok) {
+          document.getElementById('regPonto').value = '';
+          document.getElementById('regCloro').value = '';
+          document.getElementById('regPh').value = '';
+          document.getElementById('regAcao').value = '';
+          await carregarDados();
+        }
+      } catch (err) {
+        alert('Erro ao salvar registro: ' + err.message);
+      }
+    }
+
+    async function excluirRegistro(id) {
+      if (!confirm('Deseja realmente excluir esta medição?')) return;
+      try {
+        const res = await fetch(`/api/entries/${id}`, { method: 'DELETE' });
+        if (res.ok) await carregarDados();
+      } catch (err) {
+        alert('Erro ao excluir registro: ' + err.message);
+      }
+    }
+
+    // EMISSÃO DE RELATÓRIO COM ASSINATURA
+    function gerarRelatorio() {
+      if (!unidadeAtiva) {
+        alert('Selecione uma unidade para gerar o relatório.');
+        return;
+      }
+
+      const registros = appData.entries.filter(e => e.unidade === unidadeAtiva);
+      if (registros.length === 0) {
+        alert('Não há registros para esta unidade.');
+        return;
+      }
+
+      document.getElementById('relEmpresa').innerText = appData.config.empresa || 'CLORLOG - REGISTROS DE MONITORAMENTO';
+      document.getElementById('relUnidade').innerText = unidadeAtiva;
+      document.getElementById('relDataEmissao').innerText = new Date().toLocaleDateString('pt-BR');
+      document.getElementById('relResponsavelNome').innerText = appData.config.responsavel || '';
+
+      const corpoTabela = document.getElementById('relTabelaCorpo');
+      corpoTabela.innerHTML = '';
+
+      registros.forEach(r => {
+        corpoTabela.innerHTML += `
+          <tr>
+            <td class="border border-gray-400 p-2 text-center">${r.data} ${r.hora}</td>
+            <td class="border border-gray-400 p-2">${r.ponto}</td>
+            <td class="border border-gray-400 p-2 text-center font-bold">${Number(r.cloro).toFixed(2)}</td>
+            <td class="border border-gray-400 p-2 text-center">${r.ph ? Number(r.ph).toFixed(1) : '—'}</td>
+            <td class="border border-gray-400 p-2">${r.operador}</td>
+            <td class="border border-gray-400 p-2">${r.acao || '—'}</td>
+          </tr>
+        `;
       });
-      await loadAll();
-      $('entryForm').reset();
-      $('statusPreview').style.display = 'none';
-      $('fData').valueAsDate = new Date();
-      $('fHora').value = new Date().toTimeString().slice(0,5);
-      showToast('Registro salvo com sucesso.');
-    } catch(err) {
-      showToast('Erro ao salvar no servidor.');
+
+      window.print();
     }
-  });
 
-  $('btnClearForm').addEventListener('click', () => {
-    $('entryForm').reset();
-    $('statusPreview').style.display = 'none';
-  });
-
-  $('filterMes').addEventListener('change', renderTable);
-  $('filterPonto').addEventListener('change', renderTable);
-  $('filterStatus').addEventListener('change', renderTable);
-
-  $('btnExport').addEventListener('click', () => {
-    const filterMes = $('filterMes').value;
-    const filterPonto = $('filterPonto').value;
-    let list = entries.slice().sort((a,b)=> (a.data+a.hora).localeCompare(b.data+b.hora));
-    if (filterMes) list = list.filter(e => e.data.startsWith(filterMes));
-    if (filterPonto) list = list.filter(e => e.ponto === filterPonto);
-    if (list.length === 0){ showToast('Nenhum registro para exportar.'); return; }
-    const header = ['Data','Hora','Ponto de coleta','Cloro (mg/L)','pH','Status','Ação corretiva','Operador'];
-    const rows = list.map(e => {
-      const st = getStatus(e.cloro);
-      return [formatDate(e.data), e.hora, e.ponto, e.cloro.toFixed(2), e.ph ?? '', st.status, e.acao || '', e.operador || ''];
-    });
-    const csv = [header, ...rows].map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(';')).join('\n');
-    const blob = new Blob(['\uFEFF' + csv], { type:'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url; a.download = `controle-cloro-${filterMes || 'todos'}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-  });
-
-  $('btnConfig').addEventListener('click', () => $('configOverlay').classList.add('open'));
-  $('btnCloseConfig').addEventListener('click', () => $('configOverlay').classList.remove('open'));
-  $('configOverlay').addEventListener('click', (e) => { if (e.target.id === 'configOverlay') $('configOverlay').classList.remove('open'); });
-  
-  $('btnSaveConfig').addEventListener('click', async () => {
-    config.empresa = $('cfgEmpresa').value.trim();
-    config.responsavel = $('cfgResponsavel').value.trim();
-    try {
-      await fetch('/api/config', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(config)
-      });
-      renderConfig();
-      $('configOverlay').classList.remove('open');
-      showToast('Configurações salvas.');
-    } catch(err) {
-      showToast('Erro ao salvar configurações.');
+    // MODAL DE CONFIGURAÇÕES
+    function abrirModalConfig() {
+      document.getElementById('cfgEmpresa').value = appData.config.empresa || '';
+      document.getElementById('cfgResponsavel').value = appData.config.responsavel || '';
+      document.getElementById('cfgUnidades').value = appData.config.unidades || '';
+      document.getElementById('modalConfig').classList.remove('hidden');
     }
-  });
 
-  $('fData').valueAsDate = new Date();
-  $('filterMes').value = currentMonthKey();
-  $('fHora').value = new Date().toTimeString().slice(0,5);
+    function fecharModalConfig() {
+      document.getElementById('modalConfig').classList.add('hidden');
+    }
 
-  loadAll();
-})();
-</script>
+    async function salvarConfiguracoes(e) {
+      e.preventDefault();
+      const payload = {
+        empresa: document.getElementById('cfgEmpresa').value.trim(),
+        responsavel: document.getElementById('cfgResponsavel').value.trim(),
+        unidades: document.getElementById('cfgUnidades').value.trim()
+      };
+
+      try {
+        const res = await fetch('/api/config', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        if (res.ok) {
+          fecharModalConfig();
+          await carregarDados();
+        }
+      } catch (err) {
+        alert('Erro ao salvar configurações: ' + err.message);
+      }
+    }
+
+    carregarDados();
+  </script>
 </body>
 </html>
